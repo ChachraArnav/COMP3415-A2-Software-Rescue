@@ -107,6 +107,23 @@ These four tests are a starting point. **Passing them does not mean every requir
 
 The supplied tests use temporary files and do not change your saved orders or stock.
 
+### Additional Regression Tests
+
+The original repository includes four starter tests. Additional automated tests were created for normal operations, boundary conditions, invalid inputs, and CR-01 Express Delivery.
+
+Run the complete suite using:
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+The expanded suite contains 23 tests. Two known pre-existing defects are exposed by the tests:
+
+- The student discount is not applied when the merchandise subtotal is exactly $50.00.
+- Cancelling an already cancelled order restores inventory again.
+
+These failures were documented during baseline testing and intentionally kept separate from behavior-preserving refactoring and CR-01 implementation.
+
 ## 4. Saved data and practice sessions
 
 The program automatically saves orders and stock levels in `.supplydesk/state.json`. When you close and reopen it, you continue where you left off.
@@ -214,3 +231,83 @@ These commands use the same orders and stock as the interactive menu opened with
 python -m supplydesk --help
 python -m supplydesk quote --help
 ```
+## 7. CR-01 — Express Delivery
+
+Campus Supply Desk now supports three fulfillment options through the service API, individual commands, and interactive menu.
+
+| Fulfillment | Delivery fee | Conditions |
+|---|---|---|
+| `pickup` | $0.00 | Always free |
+| `delivery` | $6.00 | Free when merchandise subtotal after discount is at least $100.00 |
+| `express` | $12.00 | Fixed fee, never waived |
+
+The default customer type remains `regular`, and the default fulfillment option remains `pickup`.
+
+Student discounts apply only to merchandise, not delivery fees. Existing discount eligibility and rounding rules remain unchanged.
+
+### Express quote examples
+
+Regular customer, two notebooks:
+
+```sh
+python -m supplydesk quote --customer regular --fulfillment express --item notebook:2
+```
+
+Expected total: **2,200 cents ($22.00 CAD)**.
+
+Student customer, two hoodies:
+
+```sh
+python -m supplydesk quote --customer student --fulfillment express --item hoodie:2
+```
+
+Expected total: **8,400 cents ($84.00 CAD)**.
+
+Regular customer, three hoodies:
+
+```sh
+python -m supplydesk quote --customer regular --fulfillment express --item hoodie:3
+```
+
+Expected total: **13,200 cents ($132.00 CAD)**.
+
+### Place an express order
+
+```sh
+python -m supplydesk place --customer student --fulfillment express --item hoodie:2
+```
+
+The resulting order includes the fulfillment type, purchased items, discount, delivery fee, and total. Orders are saved in the configured JSON state file and can be retrieved or cancelled using the existing commands.
+
+### Interactive menu
+
+Run:
+
+```sh
+python -m supplydesk
+```
+
+Select option `2` to get a quote or option `3` to place an order. When prompted for fulfillment, choose `express`.
+
+The menu displays the available fulfillment options and their fees.
+
+### Command help
+
+```sh
+python -m supplydesk quote --help
+python -m supplydesk place --help
+```
+
+Both commands support `pickup`, `delivery`, and `express`.
+
+### CR-01 verification
+
+Automated tests in `tests/test_express_delivery.py` cover:
+
+- Fixed express pricing and student discounts.
+- Express delivery fees that are never waived.
+- Unchanged pickup and standard delivery pricing.
+- Rejection of unsupported fulfillment options.
+- Agreement between express quotes and placed orders.
+- Persistence of express orders after reopening saved data.
+- Preservation of express order details after cancellation.
