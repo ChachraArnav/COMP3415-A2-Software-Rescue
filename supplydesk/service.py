@@ -1,6 +1,4 @@
 
-"""Operations used by the command-line order desk."""
-
 from supplydesk.storage import JsonStore
 
 
@@ -104,6 +102,12 @@ class OrderService:
             state, customer_type, items, fulfillment
         )
 
+    def _reduce_stock(self, state, lines):
+        for line in lines:
+            for product in state["catalog"]:
+                if product["product_id"] == line["product_id"]:
+                    product["stock"] -= line["quantity"]
+
     def place_order(self, customer_type, items, fulfillment="pickup"):
         state = self.store.load()
 
@@ -117,10 +121,7 @@ class OrderService:
             **quote,
         }
 
-        for line in quote["items"]:
-            for product in state["catalog"]:
-                if product["product_id"] == line["product_id"]:
-                    product["stock"] -= line["quantity"]
+        self._reduce_stock(state, quote["items"])
 
         state["next_order_number"] += 1
         state["orders"].append(order)
