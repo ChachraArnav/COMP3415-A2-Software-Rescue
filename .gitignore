@@ -7,3 +7,10 @@ __pycache__/
 htmlcov/
 
 baseline_tests.txt
+
+# Local test evidence
+baseline_tests.txt
+refactoring1_tests.txt
+refactoring2_tests.txt
+refactoring3_tests.txt
+cr01_tests.txt
